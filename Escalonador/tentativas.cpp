@@ -79,36 +79,11 @@ class Escalonador{
         }
         else if(p.prioridade == ES){
             filaES.push(p);
+            p.ESAtual++;
         }
     }
 
     
-    void execQ0( int quantum)
-    {
-        Processo p = Q0.front();  
-        if(p.tempoRestante <= quantum){
-            p.decrementaTempoRestante(p.tempoRestante);
-            tempoAtual += p.tempoRestante;
-            Q0.pop();
-            p.ESAtual++;
-            if(p.ESAtual <= p.numeroES){
-                filaES.push(p);
-                p.reset();
-            }
-            else{
-                cout << "Processo " << p.id << " terminou no tempo de " << tempoAtual<< endl;
-                p.prioridade = PRONTO;
-            }
-            
-    }
-        else{
-            p.decrementaTempoRestante(quantum);
-            tempoAtual += quantum;
-            Q0.pop();
-            p.prioridade = MEDIA;
-            Q1.push(p);
-        }
-        }
 
     bool processosprontos()//verifica se todos os processos estão prontos
     {
@@ -157,7 +132,24 @@ class Escalonador{
                 Processo p = Q0.front();
                 quantum =10;
                 int tempoQ0 = 0;
-                
+                p.tempoRestante--;
+                tempoQ0++;
+                if(p.tempoRestante == 0 && p.ESAtual <= p.numeroES){
+                    cout << "Processo " << p.id << " foi enviado para fila e entrada e saida no tempo de "<< tempoAtual<< endl;
+                    p.prioridade=ES;
+                    voltaprocesso(p);
+                    p.reset();
+                }
+                else if(tempoQ0 == quantum){
+                    cout<<"Processo " << p.id << " executou por " << tempoQ0 << "ms e foi para a fila Q1" << endl;
+                    p.prioridade = MEDIA;
+                    voltaprocesso(p);
+                }
+                else if(p.tempoRestante == 0 && p.ESAtual > p.numeroES){
+                    cout << "Processo " << p.id << " terminou no tempo de " << tempoAtual<< endl;
+                    p.prioridade = PRONTO;
+                    voltaprocesso(p);
+                }
 
             }
             else if(!Q1.empty()){
@@ -170,7 +162,7 @@ class Escalonador{
             tempoAtual++;
             tempodeespera();
         }
-    }
+        }
 
 };
 
