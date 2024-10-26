@@ -1,456 +1,213 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <queue>
+#include <list>
+#include <algorithm>
+#include <string>
+
 using namespace std;
 
-// o programa deve receber como entrada:
-// 1. total de processos
-// 2. duraÃ§Ã£o surto de cada processo
-// 3. numero de operaÃ§Ãµes de E/S de cada processo
-
-// saida: diagrama de gantt
-
-enum State
-{
-    NONE,
-    READY,
-    WAITING,
-    TERMINATED
+enum Prioridade {
+    ALTA,
+    MEDIA,
+    BAIXA,
+    ES,
+    PRONTO
 };
 
-class Process
-{
-    string name;
-    int burstTime;
-    int remainingBurstTime;
-    int arrivalTime;
-    int ioOperations;
-    int remainingIoOperations;
-    int age;
-    State state;
+struct Processo {
+    int id;
+    int tempoBurst;
+    int numeroES;
+    int ESAtual;
+    int tempoRestante;
+    Prioridade prioridade;
+    int tempoprasair;
+
+    Processo(int id, int tempoBurst, int numeroES) {
+        this->id = id;
+        this->tempoBurst = tempoBurst;
+        this->numeroES = numeroES;
+        this->ESAtual = 0;
+        this->tempoRestante = tempoBurst;
+        this->prioridade = ALTA;
+        this->tempoprasair = 0;
+    }
+    Processo() {
+    }
+    
+    void reset() {
+        this->tempoRestante = this->tempoBurst;
+    }
+};
+
+class Escalonador {
+    queue<Processo*> Q0;
+    queue<Processo*> Q1;
+    queue<Processo*> Q2;
+    queue<Processo*> filaES;
+    queue<Processo*> filaPronto;
+    int tempoAtual;
+    list<Processo> todosProcessos;
 
 public:
-    Process(string name, int burstTime, int ioOperations)
-    {
-        this->name = name;
-        this->burstTime = burstTime;
-        this->remainingBurstTime = burstTime;
-        this->arrivalTime = 0;
-        this->ioOperations = ioOperations;
-        this->remainingIoOperations = ioOperations;
-        this->age = 0;
-        this->state = NONE;
+    Escalonador() : tempoAtual(0) {}
+
+    void adicionarProcesso(const Processo& p) {
+        todosProcessos.push_back(p);
+        Q0.push(&todosProcessos.back()); // Adiciona o endereço do processo
+}
+
+    void voltaprocesso(Processo* p) {
+        if (p->prioridade == ALTA) {
+            Q0.push(p);
+        } else if (p->prioridade == MEDIA) {
+            Q1.push(p);
+        } else if (p->prioridade == BAIXA) {
+            Q2.push(p);
+        } else if (p->prioridade == ES) {
+            filaES.push(p);
+            p->ESAtual++;
+        }
     }
 
-    Process &setArrivalTime(int arrivalTime)
-    {
-        this->arrivalTime = arrivalTime;
-        return *this;
+    bool processosprontos() {
+        for (auto& processo : todosProcessos) {
+            if (processo.prioridade != PRONTO) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    Process &operator++()
-    {
-        this->age++;
-        return *this;
+    bool cpuociosa() {
+        for (auto& processo : todosProcessos) {
+            if (processo.prioridade != ES) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    Process &decrementRemainingBurstTime()
-    {
-        this->remainingBurstTime--;
-        return *this;
+    void sairES() {
+        if (!filaES.empty()) {
+            Processo* p = filaES.front();
+            if (p->tempoprasair >= 30) {
+                filaES.pop();
+                p->prioridade = ALTA;
+                voltaprocesso(p);
+                p->tempoprasair = 0;
+                cout << "Processo " << p->id << " saiu da fila de entrada e saida no tempo de " << tempoAtual - 1 << endl;
+            }
+        }
     }
 
-    Process &decrementIoOperations()
-    {
-        this->remainingIoOperations--;
-        return *this;
+    void tempodeespera() {
+        if (!filaES.empty()) {
+            Processo* p = filaES.front();
+            p->tempoprasair++;
+        }
     }
 
-    Process &execute()
-    {
-        this->remainingBurstTime--;
-        return *this;
-    }
+    void simular() {
+        int tempoQ0 = 0;
+        int tempoQ1 = 0;
+        while (!processosprontos()) {
+            sairES();
+            if (!Q0.empty()) {
+                Processo* p = Q0.front();
+                int quantum = 10;
+                p->tempoRestante--;
+                tempoQ0++;
+                cout << "Processo " << p->id << " sendo executado na fila Q0 no tempo de " << tempoAtual << endl;
+                if (p->tempoRestante == 0 && p->ESAtual < p->numeroES) {
+                    cout << "Processo " << p->id << " foi enviado para fila de entrada e saida no tempo de " << tempoAtual << endl;
+                    p->prioridade = ES;
+                    voltaprocesso(p);
+                    p->reset();
+                    tempoQ0 = 0;
+                    Q0.pop();
+                } else if (tempoQ0 == quantum) {
+                    cout << "Processo " << p->id << " executou por " << tempoQ0 << "ms e foi para a fila Q1" << endl;
+                    p->prioridade = MEDIA;
+                    voltaprocesso(p);
+                    tempoQ0 = 0;
+                    Q0.pop();
+                } else if (p->tempoRestante == 0 && p->ESAtual >= p->numeroES) {
+                    cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual << endl;
+                    p->prioridade = PRONTO;
+                    tempoQ0 = 0;
+                    Q0.pop();
+                }
 
-    Process &reset()
-    {
-        this->remainingBurstTime = this->burstTime;
-        this->age = 0;
-        return *this;
-    }
+            } else if (!Q1.empty()) {
+                Processo* p = Q1.front();
+                int quantum = 15;
+                p->tempoRestante--;
+                tempoQ1++;
+                cout << "Processo " << p->id << " sendo executado na fila Q1 no tempo de " << tempoAtual << endl;
+                if (p->tempoRestante == 0 && p->ESAtual < p->numeroES) {
+                    cout << "Processo " << p->id << " foi enviado para fila de entrada e saida no tempo de " << tempoAtual << endl;
+                    p->prioridade = ES;
+                    voltaprocesso(p);
+                    p->reset();
+                    tempoQ1 = 0;
+                    Q1.pop();
+                } else if (tempoQ1 == quantum) {
+                    cout << "Processo " << p->id << " executou por " << tempoQ1 << "ms e foi para a fila Q2" << endl;
+                    p->prioridade = BAIXA;
+                    voltaprocesso(p);
+                    tempoQ1 = 0;
+                    Q1.pop();
+                } else if (p->tempoRestante == 0 && p->ESAtual >= p->numeroES) {
+                    cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual << endl;
+                    p->prioridade = PRONTO;
+                    tempoQ1 = 0;
+                    Q1.pop();
+                }
 
-    Process &setState(State state)
-    {
-        this->state = state;
-        return *this;
+            } 
+            else if (!Q2.empty()) {
+                Processo* p = Q2.front();
+                p->tempoRestante--;
+                cout << "Processo " << p->id << " sendo executado na fila Q2 no tempo de " << tempoAtual << endl; 
+                if (p->tempoRestante <= 0 && p->ESAtual < p->numeroES) {
+                    cout << "Processo " << p->id << " foi enviado para fila de entrada e saida no tempo de " << tempoAtual << endl;
+                    p->prioridade = ES;
+                    voltaprocesso(p);
+                    p->reset();
+                    Q2.pop();
+                } else if (p->tempoRestante <= 0 && p->ESAtual >= p->numeroES) {
+                    cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual << endl;
+                    p->prioridade = PRONTO;
+                    Q2.pop();
+                }
+                
+            } else if (cpuociosa()) {
+                cout << "CPU ociosa no tempo de " << tempoAtual << endl;
+            }
+            tempoAtual++;
+            tempodeespera();
+        }
     }
-
-    int getAge() const
-    {
-        return this->age;
-    }
-
-    State getState() const
-    {
-        return this->state;
-    }
-
-    int getRemainingBurstTime() const
-    {
-        return this->remainingBurstTime;
-    }
-
-    int getBurstTime() const
-    {
-        return this->burstTime;
-    }
-
-    int getRemainingIoOperations() const
-    {
-        return this->remainingIoOperations;
-    }
-
-    string getName() const
-    {
-        return this->name;
-    }
+    
 };
 
-class Scheduler
-{
-    // entrada do programa: construtor
-    int numberOfProcesses;
-    vector<Process> processes;
-    vector<int> bursts;
-    vector<int> ioOperations;
-
-    // filas do escalonador
-    int quantum_0 = 10;
-    int quantum_1 = 15;
-    queue<Process *> Q0; // fila de alta prioridade: Round Robin
-    queue<Process *> Q1; // fila de mÃ©dia prioridade: Round Robin
-    queue<Process *> Q2; // fila de baixa prioridade: FCFS
-
-    // funcionamento do programa
-    int clock;
-    int ioClock; // 30ms
-
-    queue<Process *> readyQueue;
-    queue<Process *> waitingQueue;
-    queue<Process *> terminatedQueue;
-
-public:
-    // verifica se o processo que estava em espera no IO terminou
-    bool ioCompleted()
-    {
-        if (ioClock == 30)
-            return true;
-        else
-            return false;
-    }
-
-    // tempo
-    Scheduler &incrementClock()
-    {
-        clock++;
-        if (!waitingQueue.empty())
-        {
-            ioClock++;
-            cout << "IO Clock: " << ioClock << endl;
-        }
-        if (!Q0.empty())
-            Q0.front()->decrementRemainingBurstTime();
-        else if (!Q1.empty())
-            Q1.front()->decrementRemainingBurstTime();
-        else if (!Q2.empty())
-        {
-            Q2.front()->decrementRemainingBurstTime();
-            cout << Q2.front()->getRemainingBurstTime() << endl;
-        }
-        return *this;
-    }
-
-    int getCurrentTime() const
-    {
-        return clock;
-    }
-
-    // move os processos entre as filas
-    // sÃ³ vai para prontos se estiver entrando pela primeira vez ou se estiver saindo de waiting
-    Scheduler &moveToReadyQueue(Process &p)
-    {
-        State state = p.getState(); // obtem o estado do processo na fila antes de mover
-        p.setState(READY).reset();  // muda o estado do processo para pronto e reseta o processo
-        readyQueue.push(&p);        // adiciona o processo na fila de prontos
-        if (state == WAITING)
-        { // se o processo estava esperando, remove da fila de espera
-            waitingQueue.pop();
-            ioClock = 0; // reseta o clock de I/O
-            if (p.getRemainingIoOperations() != 0)
-                p.decrementIoOperations();
-        }
-        return *this;
-    }
-
-    // sÃ³ vai para waiting se estiver saindo de qualquer fila
-    Scheduler &MoveToWaitingQueue(Process &p)
-    {
-        p.setState(WAITING);
-        waitingQueue.push(&p);
-        auto age = p.getAge();
-        if (age == 0)
-            Q0.pop();
-        else if (age == 1)
-            Q1.pop();
-        else
-            Q2.pop();
-        return *this;
-    }
-
-    // sÃ³ vai para terminated se estiver saindo de qualquer fila
-    Scheduler &MoveToTerminated(Process &p)
-    {
-        p.setState(TERMINATED);
-        terminatedQueue.push(&p);
-        auto age = p.getAge();
-        if (age == 0)
-            Q0.pop();
-        else if (age == 1)
-            Q1.pop();
-        else
-            Q2.pop();
-        return *this;
-    }
-
-    // move os processos entre as filas de prioridade
-    Scheduler &scheduleProcess(Process &p)
-    {
-        int age = p.getAge();
-        if (age == 0)
-        {
-            p.setArrivalTime(clock);
-            Q0.push(&p);
-            readyQueue.pop();
-        }
-        else if (age == 1)
-        {
-            Q1.push(&p);
-            Q0.pop();
-        }
-        else if (age == 2)
-        {
-            Q2.push(&p);
-            Q1.pop();
-        }
-        else
-        {
-            ;
-        }
-        return *this;
-    }
-
-    // construtor (jÃ¡ adiciona os processos na fila de prontos)
-    Scheduler(int numberOfProcesses, initializer_list<int> bursts, initializer_list<int> ioOperations)
-    {
-        if (bursts.size() != static_cast<size_t>(numberOfProcesses) || ioOperations.size() != static_cast<size_t>(numberOfProcesses))
-        {
-            throw invalid_argument("Number of bursts and I/O operations must be equal to the number of processes.");
-        }
-        else
-        {
-            this->numberOfProcesses = numberOfProcesses;
-            this->bursts.assign(bursts);
-            this->ioOperations.assign(ioOperations);
-            this->clock = 0;
-            this->ioClock = 0;
-
-            for (int i = 0; i < numberOfProcesses; i++)
-            {
-                Process *p = new Process("P" + to_string(i), this->bursts[i], this->ioOperations[i]);
-                moveToReadyQueue(*p);
-            }
-        }
-    }
-
-    // display queues
-    Scheduler &displayReadyQueue()
-    {
-        queue<Process *> q(readyQueue);
-        cout << "Ready Queue: ";
-        while (!q.empty())
-        {
-            cout << q.front()->getName() << " ";
-            q.pop();
-        }
+int main() {
+    Escalonador escalonador;
+    int totalProcessos;
+    cout << "Digite o total de processos: ";
+    cin >> totalProcessos;
+    cout << endl;
+    for (int i = 0; i < totalProcessos; ++i) {
+        int tempoBurst, numeroES;
+        cout << "Digite a duracao do surto de CPU do processo " << (i) << ": ";
+        cin >> tempoBurst;
+        cout << "Digite o numero de operacoes de E/S do processo " << (i) << ": ";
+        cin >> numeroES;
         cout << endl;
-        return *this;
+        escalonador.adicionarProcesso(Processo(i, tempoBurst, numeroES));
     }
-
-    Scheduler &displayWaitingQueue()
-    {
-        queue<Process *> q(waitingQueue);
-        cout << "Waiting Queue: ";
-        while (!q.empty())
-        {
-            cout << q.front()->getName() << " ";
-            q.pop();
-        }
-        cout << endl;
-        return *this;
-    }
-
-    Scheduler &displayTerminatedQueue()
-    {
-        queue<Process *> q(terminatedQueue);
-        cout << "Terminated Queue: ";
-        while (!q.empty())
-        {
-            cout << q.front()->getName() << " ";
-            q.pop();
-        }
-        cout << endl;
-        return *this;
-    }
-
-    Scheduler &displayQ0()
-    {
-        queue<Process *> q(Q0);
-        cout << "Q0: ";
-        while (!q.empty())
-        {
-            cout << q.front()->getName() << " ";
-            q.pop();
-        }
-        cout << endl;
-        return *this;
-    }
-
-    Scheduler &displayQ1()
-    {
-        queue<Process *> q(Q1);
-        cout << "Q1: ";
-        while (!q.empty())
-        {
-            cout << q.front()->getName() << " ";
-            q.pop();
-        }
-        cout << endl;
-        return *this;
-    }
-
-    Scheduler &displayQ2()
-    {
-        queue<Process *> q(Q2);
-        cout << "Q2: ";
-        while (!q.empty())
-        {
-            cout << q.front()->getName() << " ";
-            q.pop();
-        }
-        cout << endl;
-        return *this;
-    }
-
-    void tryToEnd(Process &p)
-    {
-        if (p.getRemainingBurstTime() == 0)
-        {
-            if (p.getRemainingIoOperations() == 0)
-                MoveToTerminated(p); // retira automaticamente da fila anterior
-            else
-                MoveToWaitingQueue(p);
-        }
-    }
-
-    // processador
-    // 1. verifica se hÃ¡ processos completos no IO e passa para pronto
-    void verifyIO()
-    {
-        if (ioCompleted())
-        {
-            Process *p = waitingQueue.front();
-            moveToReadyQueue(*p);
-        }
-    }
-    // 2. verifica se hÃ¡ processos na fila de pronto e escalona
-    void prepareScheduler()
-    {
-        while (!readyQueue.empty())
-        {
-            Process *p = readyQueue.front();
-            scheduleProcess(*p);
-            // schedule jÃ¡ remove processo da fila de prontos
-        }
-    }
-    // 3. verificar envelhecimento dos processos e encerra se necessÃ¡rio
-    void verifyAging()
-    {
-        if (!Q0.empty())
-        {
-            Process *p = Q0.front();
-            tryToEnd(*p);
-            if (p->getState() == READY && p->getBurstTime() - p->getRemainingBurstTime() == quantum_0)
-            {
-                p->operator++();     // aumenta a idade do processo
-                scheduleProcess(*p); // tira automaticamente da fila de Q0
-            }
-        }
-        else if (!Q1.empty())
-        {
-            Process *p = Q1.front();
-            tryToEnd(*p);
-            if (p->getState() == READY && p->getBurstTime() - p->getRemainingBurstTime() == quantum_1 + quantum_0)
-            {
-                p->operator++();     // aumenta a idade do processo
-                scheduleProcess(*p); // tira automaticamente da fila de Q1
-            }
-        }
-        else if (!Q2.empty())
-        {
-            Process *p = Q2.front();
-            tryToEnd(*p);
-        }
-    }
-    // 4. executa os processos
-    void execute()
-    {
-        while (terminatedQueue.size() != static_cast<size_t>(numberOfProcesses))
-        {
-            verifyIO();
-            prepareScheduler();
-            verifyAging();
-            incrementClock();
-            displayReadyQueue().displayWaitingQueue().displayQ0().displayQ1().displayQ2().displayTerminatedQueue();
-            cout << "Clock: " << getCurrentTime() << endl;
-            getchar();
-        }
-    }
-
-    void executeByStep()
-    {
-        verifyIO();
-        prepareScheduler();
-        verifyAging();
-        incrementClock();
-        displayReadyQueue().displayWaitingQueue().displayQ0().displayQ1().displayQ2().displayTerminatedQueue();
-        cout << "Clock: " << getCurrentTime() << endl;
-    }
-
-    void executeByStep(int steps)
-    {
-        for (int i = 0; i < steps; i++)
-        {
-            verifyIO();
-            prepareScheduler();
-            verifyAging();
-            incrementClock();
-        }
-        displayReadyQueue().displayWaitingQueue().displayQ0().displayQ1().displayQ2().displayTerminatedQueue();
-        cout << "Clock: " << getCurrentTime() << endl;
-    }
-};
-
-int main()
-{
-    Scheduler cpu(2, {50, 20}, {1, 2});
-    cpu.execute();
+    cout<< "Grafico de Gantt: " << endl<<endl;
+    escalonador.simular();
     return 0;
 }
