@@ -14,6 +14,14 @@ enum Prioridade {
     PRONTO
 };
 
+struct Gantt{
+    int id;
+    string fila;
+    int tempoAtual;
+    Gantt() {}
+    Gantt(int id, string fila, int tempoAtual) : id(id), fila(fila), tempoAtual(tempoAtual) {}
+};
+
 struct Processo {
     int id;
     int tempoBurst;
@@ -47,17 +55,51 @@ class Escalonador {
     queue<Processo*> filaES;
     queue<Processo*> filaPronto;
     int tempoAtual;
+    bool primeiro= true;
     list<Processo> todosProcessos;
+    vector<Gantt> gantt;
 
 public:
     Escalonador() : tempoAtual(0) {}
 
     void adicionarProcesso(const Processo& p) {
         todosProcessos.push_back(p);
-        Q0.push(&todosProcessos.back()); // Adiciona o endereço do processo
+        Q0.push(&todosProcessos.back()); 
+}
+void adicionarGantt(const Gantt& g) {
+        gantt.push_back(g);
+    }
+void conttGantt(){
+    int inicioTempo = -1; 
+    int fimTempo = -1;    
+
+    for (size_t i = 0; i < gantt.size(); i++) {
+        if (i == 0 || (gantt[i].id == gantt[i - 1].id && gantt[i].fila == gantt[i - 1].fila)) {
+            
+            if (inicioTempo == -1) {
+                inicioTempo = gantt[i].tempoAtual;
+            }
+            fimTempo = gantt[i].tempoAtual;
+        } else {
+            
+            if (inicioTempo != -1 && gantt[i-1].id != 99) {
+                cout << "Processo " << gantt[i - 1].id <<  ", Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl;
+            }
+            else if(inicioTempo != -1 && gantt[i-1].id == 99){
+                cout << "CPU ociosa, Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl;
+            }
+            //reset
+            inicioTempo = gantt[i].tempoAtual;
+            fimTempo = gantt[i].tempoAtual;
+        }
+    }
+    // ultima ocorrencia
+    if (inicioTempo != -1) {
+        cout << "Processo " << gantt.back().id << ", Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl;
+    }
 }
 
-    void voltaprocesso(Processo* p) {
+void voltaprocesso(Processo* p) {
         if (p->prioridade == ALTA) {
             Q0.push(p);
         } else if (p->prioridade == MEDIA) {
@@ -91,12 +133,20 @@ public:
     void sairES() {
         if (!filaES.empty()) {
             Processo* p = filaES.front();
-            if (p->tempoprasair >= 30) {
+            if (p->tempoprasair >= 30 && !primeiro) {
                 filaES.pop();
                 p->prioridade = ALTA;
                 voltaprocesso(p);
                 p->tempoprasair = 0;
                 cout << "Processo " << p->id << " saiu da fila de entrada e saida no tempo de " << tempoAtual - 1 << endl;
+            }
+            else if (p->tempoprasair > 30) {
+                filaES.pop();
+                p->prioridade = ALTA;
+                voltaprocesso(p);
+                p->tempoprasair = 0;
+                cout << "Processo " << p->id << " saiu da fila de entrada e saida no tempo de " << tempoAtual - 1 << endl;
+                primeiro = false;
             }
         }
     }
@@ -112,13 +162,14 @@ public:
         int tempoQ0 = 0;
         int tempoQ1 = 0;
         while (!processosprontos()) {
+            tempodeespera();
             sairES();
             if (!Q0.empty()) {
                 Processo* p = Q0.front();
                 int quantum = 10;
                 p->tempoRestante--;
                 tempoQ0++;
-                cout << "Processo " << p->id << " sendo executado na fila Q0 no tempo de " << tempoAtual << endl;
+                adicionarGantt(Gantt{p->id, "Q0", tempoAtual});
                 if (p->tempoRestante == 0 && p->ESAtual < p->numeroES) {
                     cout << "Processo " << p->id << " foi enviado para fila de entrada e saida no tempo de " << tempoAtual << endl;
                     p->prioridade = ES;
@@ -132,6 +183,7 @@ public:
                     voltaprocesso(p);
                     tempoQ0 = 0;
                     Q0.pop();
+                    //tempoAtual++;
                 } else if (p->tempoRestante == 0 && p->ESAtual >= p->numeroES) {
                     cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual << endl;
                     p->prioridade = PRONTO;
@@ -144,7 +196,7 @@ public:
                 int quantum = 15;
                 p->tempoRestante--;
                 tempoQ1++;
-                cout << "Processo " << p->id << " sendo executado na fila Q1 no tempo de " << tempoAtual << endl;
+                adicionarGantt(Gantt{p->id, "Q1", tempoAtual});
                 if (p->tempoRestante == 0 && p->ESAtual < p->numeroES) {
                     cout << "Processo " << p->id << " foi enviado para fila de entrada e saida no tempo de " << tempoAtual << endl;
                     p->prioridade = ES;
@@ -158,6 +210,7 @@ public:
                     voltaprocesso(p);
                     tempoQ1 = 0;
                     Q1.pop();
+                    //tempoAtual++;
                 } else if (p->tempoRestante == 0 && p->ESAtual >= p->numeroES) {
                     cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual << endl;
                     p->prioridade = PRONTO;
@@ -169,7 +222,7 @@ public:
             else if (!Q2.empty()) {
                 Processo* p = Q2.front();
                 p->tempoRestante--;
-                cout << "Processo " << p->id << " sendo executado na fila Q2 no tempo de " << tempoAtual << endl; 
+                adicionarGantt(Gantt{p->id, "Q2",   tempoAtual});
                 if (p->tempoRestante <= 0 && p->ESAtual < p->numeroES) {
                     cout << "Processo " << p->id << " foi enviado para fila de entrada e saida no tempo de " << tempoAtual << endl;
                     p->prioridade = ES;
@@ -177,17 +230,18 @@ public:
                     p->reset();
                     Q2.pop();
                 } else if (p->tempoRestante <= 0 && p->ESAtual >= p->numeroES) {
-                    cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual << endl;
+                    cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual +1 << endl;
                     p->prioridade = PRONTO;
                     Q2.pop();
                 }
                 
             } else if (cpuociosa()) {
-                cout << "CPU ociosa no tempo de " << tempoAtual << endl;
+                adicionarGantt(Gantt{99, "CPUO", tempoAtual});
             }
             tempoAtual++;
-            tempodeespera();
+            
         }
+        cout<< "Tempo total de processamento: "<< tempoAtual<< "ms."<< endl;
     }
     
 };
@@ -207,7 +261,8 @@ int main() {
         cout << endl;
         escalonador.adicionarProcesso(Processo(i, tempoBurst, numeroES));
     }
-    cout<< "Grafico de Gantt: " << endl<<endl;
     escalonador.simular();
+    cout<<endl<< "GRAFICO DE GANTT: " << endl<<endl;
+    escalonador.conttGantt();
     return 0;
 }
