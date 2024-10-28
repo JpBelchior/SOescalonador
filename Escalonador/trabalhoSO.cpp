@@ -18,7 +18,9 @@ struct Gantt{
     int id;
     string fila;
     int tempoAtual;
+    
     Gantt() {}
+
     Gantt(int id, string fila, int tempoAtual) : id(id), fila(fila), tempoAtual(tempoAtual) {}
 };
 
@@ -63,13 +65,16 @@ public:
     Escalonador() : tempoAtual(0) {}
 
     void adicionarProcesso(const Processo& p) {
+
         todosProcessos.push_back(p);
         Q0.push(&todosProcessos.back()); 
 }
 void adicionarGantt(const Gantt& g) {
+
         gantt.push_back(g);
     }
 void conttGantt(){
+
     int inicioTempo = -1; 
     int fimTempo = -1;    
 
@@ -100,6 +105,7 @@ void conttGantt(){
 }
 
 void voltaprocesso(Processo* p) {
+
         if (p->prioridade == ALTA) {
             Q0.push(p);
         } else if (p->prioridade == MEDIA) {
@@ -113,26 +119,26 @@ void voltaprocesso(Processo* p) {
     }
 
     bool processosprontos() {
+
         for (auto& processo : todosProcessos) {
-            if (processo.prioridade != PRONTO) {
-                return false;
-            }
+            if (processo.prioridade != PRONTO)  return false;
         }
         return true;
     }
 
     bool cpuociosa() {
+
         for (auto& processo : todosProcessos) {
-            if (processo.prioridade != ES) {
-                return false;
-            }
+            if (processo.prioridade != ES) return false;
         }
         return true;
     }
 
     void sairES() {
+
         if (!filaES.empty()) {
             Processo* p = filaES.front();
+
             if (p->tempoprasair >= 30 && !primeiro) {
                 filaES.pop();
                 p->prioridade = ALTA;
@@ -152,6 +158,7 @@ void voltaprocesso(Processo* p) {
     }
 
     void tempodeespera() {
+
         if (!filaES.empty()) {
             Processo* p = filaES.front();
             p->tempoprasair++;
@@ -161,9 +168,11 @@ void voltaprocesso(Processo* p) {
     void simular() {
         int tempoQ0 = 0;
         int tempoQ1 = 0;
+
         while (!processosprontos()) {
             tempodeespera();
             sairES();
+
             if (!Q0.empty()) {
                 Processo* p = Q0.front();
                 int quantum = 10;
@@ -183,7 +192,6 @@ void voltaprocesso(Processo* p) {
                     voltaprocesso(p);
                     tempoQ0 = 0;
                     Q0.pop();
-                    //tempoAtual++;
                 } else if (p->tempoRestante == 0 && p->ESAtual >= p->numeroES) {
                     cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual << endl;
                     p->prioridade = PRONTO;
@@ -210,7 +218,6 @@ void voltaprocesso(Processo* p) {
                     voltaprocesso(p);
                     tempoQ1 = 0;
                     Q1.pop();
-                    //tempoAtual++;
                 } else if (p->tempoRestante == 0 && p->ESAtual >= p->numeroES) {
                     cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual << endl;
                     p->prioridade = PRONTO;
@@ -230,7 +237,7 @@ void voltaprocesso(Processo* p) {
                     p->reset();
                     Q2.pop();
                 } else if (p->tempoRestante <= 0 && p->ESAtual >= p->numeroES) {
-                    cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual +1 << endl;
+                    cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual  << endl;
                     p->prioridade = PRONTO;
                     Q2.pop();
                 }
@@ -247,11 +254,13 @@ void voltaprocesso(Processo* p) {
 };
 
 int main() {
+
     Escalonador escalonador;
     int totalProcessos;
     cout << "Digite o total de processos: ";
     cin >> totalProcessos;
     cout << endl;
+
     for (int i = 0; i < totalProcessos; ++i) {
         int tempoBurst, numeroES;
         cout << "Digite a duracao do surto de CPU do processo " << (i) << ": ";
@@ -261,6 +270,7 @@ int main() {
         cout << endl;
         escalonador.adicionarProcesso(Processo(i, tempoBurst, numeroES));
     }
+
     escalonador.simular();
     cout<<endl<< "GRAFICO DE GANTT: " << endl<<endl;
     escalonador.conttGantt();
