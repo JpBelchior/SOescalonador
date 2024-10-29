@@ -88,10 +88,10 @@ void conttGantt(){
         } else {
             
             if (inicioTempo != -1 && gantt[i-1].id != 99) {
-                cout << "Processo " << gantt[i - 1].id <<  ", Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl;
+                cout << "Processo " << gantt[i - 1].id <<  " -> Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl<< "-----------------------------------" << endl;
             }
             else if(inicioTempo != -1 && gantt[i-1].id == 99){
-                cout << "CPU ociosa, Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl;
+                cout << "CPU ociosa -> Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl<< "-----------------------------------" << endl;
             }
             //reset
             inicioTempo = gantt[i].tempoAtual;
@@ -100,7 +100,7 @@ void conttGantt(){
     }
     // ultima ocorrencia
     if (inicioTempo != -1) {
-        cout << "Processo " << gantt.back().id << ", Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl;
+        cout << "Processo " << gantt.back().id << "-> Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl<< "-----------------------------------" << endl;
     }
 }
 
@@ -113,6 +113,7 @@ void voltaprocesso(Processo* p) {
         } else if (p->prioridade == BAIXA) {
             Q2.push(p);
         } else if (p->prioridade == ES) {
+            if(filaES.empty()) primeiro = true;
             filaES.push(p);
             p->ESAtual++;
         }
