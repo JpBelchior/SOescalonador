@@ -106,7 +106,7 @@ void conttGantt(){
     }
     // ultima ocorrencia
     if (inicioTempo != -1) {
-        cout << "Processo " << gantt.back().id << "->  " << inicioTempo << "->" << fimTempo << endl<< "-----------------------------------" << endl;
+        cout << "Processo " << gantt.back().id << "->  Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl<< "-----------------------------------" << endl;
     }
 }
 
