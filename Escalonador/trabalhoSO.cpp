@@ -1,3 +1,9 @@
+/*  Al Belchior 22023
+    Al Schuinki 22040
+    Al Giovanna Fioravanso 220
+    Al Caruba 22035
+    Al Andrade 22032*/
+
 #include <iostream>
 #include <queue>
 #include <list>
@@ -90,7 +96,7 @@ void conttGantt(){
             if (inicioTempo != -1 && gantt[i-1].id != 99) {
                 cout << "Processo " << gantt[i - 1].id <<  " -> Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl<< "-----------------------------------" << endl;
             }
-            else if(inicioTempo != -1 && gantt[i-1].id == 99){
+            else if(inicioTempo != -1 && gantt[i-1].id == 99 ){
                 cout << "CPU ociosa -> Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl<< "-----------------------------------" << endl;
             }
             //reset
@@ -100,7 +106,7 @@ void conttGantt(){
     }
     // ultima ocorrencia
     if (inicioTempo != -1) {
-        cout << "Processo " << gantt.back().id << "-> Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl<< "-----------------------------------" << endl;
+        cout << "Processo " << gantt.back().id << "->  " << inicioTempo << "->" << fimTempo << endl<< "-----------------------------------" << endl;
     }
 }
 
@@ -130,7 +136,7 @@ void voltaprocesso(Processo* p) {
     bool cpuociosa() {
 
         for (auto& processo : todosProcessos) {
-            if (processo.prioridade != ES) return false;
+            if (processo.prioridade != ES && processo.prioridade!=PRONTO) return false;
         }
         return true;
     }
