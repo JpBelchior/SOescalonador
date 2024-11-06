@@ -83,7 +83,7 @@ void conttGantt(){
 
     int inicioTempo = -1; 
     int fimTempo = -1;    
-
+    cout<<"---------------------------------"<<endl;
     for (size_t i = 0; i < gantt.size(); i++) {
         if (i == 0 || (gantt[i].id == gantt[i - 1].id && gantt[i].fila == gantt[i - 1].fila)) {
             
@@ -94,10 +94,10 @@ void conttGantt(){
         } else {
             
             if (inicioTempo != -1 && gantt[i-1].id != 99) {
-                cout << "Processo " << gantt[i - 1].id <<  " -> Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl<< "-----------------------------------" << endl;
+                cout << "|Processo " << gantt[i - 1].id <<  " -> Inicio: " << inicioTempo << ", Fim: " << fimTempo <<"|"<< endl<< "-----------------------------------" << endl;
             }
             else if(inicioTempo != -1 && gantt[i-1].id == 99 ){
-                cout << "CPU ociosa -> Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl<< "-----------------------------------" << endl;
+                cout << "|CPU ociosa -> Inicio: " << inicioTempo << ", Fim: " << fimTempo <<"|"<< endl<< "-----------------------------------" << endl;
             }
             //reset
             inicioTempo = gantt[i].tempoAtual;
@@ -106,7 +106,7 @@ void conttGantt(){
     }
     // ultima ocorrencia
     if (inicioTempo != -1) {
-        cout << "Processo " << gantt.back().id << "->  Inicio: " << inicioTempo << ", Fim: " << fimTempo << endl<< "-----------------------------------" << endl;
+        cout << "|Processo " << gantt.back().id << "->  Inicio: " << inicioTempo << ", Fim: " << fimTempo <<"|"<< endl<< "-----------------------------------" << endl;
     }
 }
 
