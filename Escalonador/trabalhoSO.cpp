@@ -1,6 +1,6 @@
 /*  Al Belchior 22023
     Al Schuinki 22040
-    Al Giovanna Fioravanso 220
+    Al Giovanna Fioravanso 22019
     Al Caruba 22035
     Al Andrade 22032*/
 
@@ -99,14 +99,14 @@ void conttGantt(){
             else if(inicioTempo != -1 && gantt[i-1].id == 99 ){
                 cout << "|CPU ociosa -> Inicio: " << inicioTempo << ", Fim: " << fimTempo <<"|"<< endl<< "-----------------------------------" << endl;
             }
-            //reset
+            //pegar o valor atual
             inicioTempo = gantt[i].tempoAtual;
             fimTempo = gantt[i].tempoAtual;
         }
     }
     // ultima ocorrencia
     if (inicioTempo != -1) {
-        cout << "|Processo " << gantt.back().id << "->  Inicio: " << inicioTempo << ", Fim: " << fimTempo <<"|"<< endl<< "-----------------------------------" << endl;
+        cout << "|Processo " << gantt.back().id << "->  Inicio: " << inicioTempo << ", Fim: " << fimTempo <<"|"<< endl<< "------------------------------------" << endl;
     }
 }
 
@@ -193,15 +193,15 @@ void voltaprocesso(Processo* p) {
                     p->reset();
                     tempoQ0 = 0;
                     Q0.pop();
+                } else if (p->tempoRestante == 0 && p->ESAtual >= p->numeroES) {
+                    cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual << endl;
+                    p->prioridade = PRONTO;
+                    tempoQ0 = 0;
+                    Q0.pop();
                 } else if (tempoQ0 == quantum) {
                     cout << "Processo " << p->id << " executou por " << tempoQ0 << "ms e foi para a fila Q1" << endl;
                     p->prioridade = MEDIA;
                     voltaprocesso(p);
-                    tempoQ0 = 0;
-                    Q0.pop();
-                } else if (p->tempoRestante == 0 && p->ESAtual >= p->numeroES) {
-                    cout << "Processo " << p->id << " pronto no tempo de " << tempoAtual << endl;
-                    p->prioridade = PRONTO;
                     tempoQ0 = 0;
                     Q0.pop();
                 }
