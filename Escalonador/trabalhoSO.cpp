@@ -175,7 +175,8 @@ void voltaprocesso(Processo* p) {
     void simular() {
         int tempoQ0 = 0;
         int tempoQ1 = 0;
-
+        cout << "Simulando..." << endl;
+        tempoAtual++;
         while (!processosprontos()) {
             tempodeespera();
             sairES();
@@ -279,6 +280,7 @@ int main() {
     }
 
     escalonador.simular();
+    cout<< endl<<"Processos carregados no tempo = 0, comecaremos a simulacao."<<endl<<endl;
     cout<<endl<< "GRAFICO DE GANTT: " << endl<<endl;
     escalonador.conttGantt();
     return 0;
